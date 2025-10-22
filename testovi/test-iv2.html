@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Квиз: Модерна Физика (Тест са оценама)</title>
+
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']] 
+    },
+    svg: {
+      fontCache: 'global'
+    }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  :root{
+    --bg1:#1e1b4b;
+    --bg2:#6d28d9;
+    --card:#0b1020e6;
+    --accent:#a78bfa;
+    --accent-2:#60a5fa;
+    --good-bg:#0f2d1c;
+    --good-br:#14532d;
+    --bad-bg:#2a0f10;
+    --bad-br:#5b1111;
+    --text:#f8fafc;
+    --muted:#cbd5e1;
+  }
+  *{box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, sans-serif;
+    color: var(--text, #f8fafc);
+    background: radial-gradient(1200px 600px at 20% 0%, var(--bg2, #6d28d9), transparent 60%),
+                radial-gradient(1000px 800px at 90% 10%, #7c3aed, transparent 60%),
+                linear-gradient(160deg, var(--bg1, #1e1b4b), #111827 60%);
+    background-attachment: fixed;
+  }
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 24px; }
+  header{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom: 16px; }
+  .title{
+    font-size: clamp(20px, 2.6vw, 34px);
+    font-weight: 800; 
+    letter-spacing: .5px; 
+  }
+  .badge{
+    padding: 6px 10px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent-2, #60a5fa), var(--accent, #a78bfa));
+    color:#0b1020; font-weight:700; font-size: 13px;
+    box-shadow: 0 10px 30px #00000055, inset 0 1px 0 #ffffff66;
+  }
+  .card{
+    background: var(--card, #0b1020e6);
+    border:1px solid #2e2f55;
+    border-radius: 18px;
+    padding: 18px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 10px 30px #00000055;
+    margin-bottom: 14px;
+  }
+  .q-h{ font-weight: 700; font-size: 18px; margin: 0 0 10px 0; color:#e5e7eb; }
+  .options{ display:grid; gap:10px }
+  label.opt{
+    display:flex; gap:10px; align-items:flex-start;
+    padding: 12px 14px;
+    border:1px solid #2e2f55;
+    border-radius: 12px;
+    background: #141633;
+    transition: transform .08s ease, border-color .15s ease, background .15s ease;
+  }
+  label.opt:hover{ transform: translateY(-1px); border-color:#4f46e5; background:#171a3a; }
+  .opt input[type="radio"]{ margin-top: 3px; }
+  .opt-text{ line-height:1.45 }
+  
+  .match-container { display: grid; gap: 12px; }
+  .match-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: center;
+    background: #141633;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: 1px solid #2e2f55;
+  }
+  .match-prompt { font-size: 15px; line-height: 1.4; }
+  select.match-select {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    background: #0b1020;
+    border: 1px solid #2e2f55;
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+  }
+  select.match-select:focus { border-color: #4f46e5; outline: none; }
+  select.correct { border-color: var(--good-br, #14532d) !important; background: var(--good-bg, #0f2d1c) !important; }
+  select.wrong { border-color: var(--bad-br, #5b1111) !important; background: var(--bad-bg, #2a0f10) !important; }
+  
+  #history h2 {
+    margin-top: 0;
+    font-size: 20px;
+    color: #e5e7eb;
+    border-bottom: 1px solid #2e2f55;
+    padding-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  #history ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin: 0;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  #history li {
+    padding: 8px 4px;
+    border-bottom: 1px solid #1c1e3a;
+    font-size: 14px;
+  }
+  #history li:last-child { border-bottom: none; }
+  #history li .hist-name { font-weight: 600; color: var(--accent); }
+  #history li .hist-score { font-weight: 700; color: var(--accent-2); }
+  #history li .hist-date { font-size: 12px; color: var(--muted); }
+
+  .muted{ color:var(--muted, #cbd5e1); font-size:14px }
+  .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-top:18px }
+  button{
+    appearance:none; border:none; cursor:pointer;
+    padding:12px 16px; border-radius:12px; font-weight:800; letter-spacing:.3px;
+    background: linear-gradient(90deg, var(--accent-2, #60a5fa), var(--accent, #a78bfa));
+    color:#0b1020; box-shadow: 0 10px 30px #00000055, inset 0 1px 0 #ffffff66;
+  }
+  button.secondary{
+    background:#0b1020; color:var(--text, #f8fafc); border:1px solid #2e2f55; box-shadow:none
+  }
+  .score{ font-weight:800; font-size: 18px; }
+  footer{ margin-top:20px; color:var(--muted, #cbd5e1); font-size:13px; text-align:center }
+  .correct{ border-color: var(--good-br, #14532d) !important; background: var(--good-bg, #0f2d1c) !important; }
+  .wrong{ border-color: var(--bad-br, #5b1111) !important; background: var(--bad-bg, #2a0f10) !important; }
+
+  #startScreen h2 { margin-top: 0; color: #e5e7eb; }
+  #studentNameInput {
+    font-family: inherit;
+    font-size: 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #2e2f55;
+    background: #141633;
+    color: var(--text);
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">Тест из физике IV-2</div>
+      <div class="badge" id="progress">Учитавање...</div>
+    </header>
+
+    <div id="startScreen" class="card">
+      <h2>Добро дошли!</h2>
+      <p class="muted" style="margin-top:0; margin-bottom:16px;">Молимо унесите своје име и презиме да бисте започели тест.</p>
+      <label for="studentNameInput" style="font-weight:600; font-size:14px; display:block; margin-bottom:6px;">Име и презиме:</label>
+      <input type="text" id="studentNameInput" placeholder="Нпр. Петар Петровић">
+      <div style="margin-top:10px;">
+        <button id="startBtn">ЗАПОЧНИ ТЕСТ</button>
+      </div>
+    </div>
+
+    <div id="quizContainer" style="display:none;">
+      <div id="quiz"></div>
+      
+      <div class="card controls">
+        <div class="score" id="score">Резултат: —</div>
+        <div style="display:flex;gap:10px">
+          <button id="submitBtn" title="Предај одговоре">ПРЕДАЈ ТЕСТ</button>
+          <button id="adminClearBtn" class="secondary" title="Обриши резултате (Admin)" style="padding: 12px 10px; min-width: 0; font-size: 14px; color: #9ca3af;">⚙️</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="history" class="card" style="display:none;"></div>
+    <footer>Срећно!</footer>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  // === БАНКА ПИТАЊА ===
+  
+  var MC_QUESTIONS = [
+    {type:"mc", q:"Који научници су извели експеримент који је показао да је брзина светлости апсолутна величина?",
+     opts:["Ајнштајн и Планк","Њутн и Галилеј","Лоренц и Фицџералд","Мајкелсон и Морли"], correct:3},
+    {type:"mc", q:"Како гласи први постулат Специјалне теорије релативности (принцип релативности)?",
+     opts:["Брзина светлости је иста у свим инерцијалним системима.","Време је апсолутно, али је простор релативан.","Сви физички закони имају исти облик у свим инерцијалним референтним системима.","Маса и енергија су еквивалентне."], correct:2},
+    {type:"mc", q:"Како гласи други постулат Специјалне теорије релативности?",
+     opts:["Сви физички закони имају исти облик у свим инерцијалним референтним системима.","Брзина светлости у вакууму је увек иста и не зависи од кретања извора ни пријемника.","Постојање етра је неопходно за простирање светлости.","Гравитација утиче на проток времена."], correct:1},
+    {type:"mc", q:"Трансформације координата у класичној механици ($x' = x - vt, t' = t$) називају се:",
+     opts:["Лоренцове трансформације","Ајнштајнове трансформације","Галилејеве трансформације","Максвелове трансформације"], correct:2},
+    {type:"mc", q:"Трансформације које повезују координате догађаја у два инерцијална система у релативистичкој механици називају се:",
+     opts:["Лоренцове трансформације","Галилејеве трансформације","Келвинове трансформације","Планкове трансформације"], correct:0},
+    {type:"mc", q:"Када су брзине $v_1$ и $v_2$ много мање од брзине светлости $c$, релативистички закон сабирања брзина:",
+     opts:["Даје потпуно другачије резултате од класичног","Прелази у класични (Галилејев) закон сабирања брзина","Постаје неважећи","Даје резултат већи од брзине светлости"], correct:1},
+    {type:"mc", q:"Шта је 'сопствена дужина' ($l_0$) тела?",
+     opts:["Дужина тела мерена у систему који се креће брзином $v$.","Најмања могућа дужина коју тело може имати.","Дужина мерена у референтном систему у коме тело мирује.","Дужина тела када се оно креће брзином светлости."], correct:2},
+    {type:"mc", q:"Како се назива појава да је дужина тела у покрету мања од његове сопствене дужине?",
+     opts:["Дилатација времена","Контракција дужине","Релативност масе","Парадокс близанаца"], correct:1},
+    {type:"mc", q:"Контракција дужине се дешава:",
+     opts:["Само у правцу нормалном на правац кретања.","Подједнако у свим правцима.","Само када се тело удаљава, али не и када се приближава.","Само у правцу кретања."], correct:3},
+    {type:"mc", q:"Шта је 'сопствено време' ($\\Delta t_0$)?",
+     opts:["Временски интервал мерен сатом који мирује у систему S.","Временски интервал мерен сатом који се креће заједно са системом S'.","Најдужи могући временски интервал између два догађаја.","Време потребно да се достигне брзина светлости."], correct:1},
+    {type:"mc", q:"Појава да време спорије тече у покретном систему у односу на систем који мирује назива се:",
+     opts:["Контракција дужине","Апсолутно време","Дилатација времена","Релативност истовремености"], correct:2},
+    {type:"mc", q:"У 'Парадоксу близанаца', који близанац на крају путовања буде старији?",
+     opts:["Близанац који је путовао свемирским бродом.","Близанац који је остао на Земљи.","Оба близанца остају исте старости.","Зависи од смера путовања."], correct:1},
+    {type:"mc", q:"Како се дефинише релативистички импулс?",
+     opts:["$p = m_0 v$","$p = m_0 v / \\sqrt{1 - v^2/c^2}$","$p = m c^2$","$p = E / c$"], correct:1},
+    {type:"mc", q:"Како се дефинише релативистичка маса ($m$)?",
+     opts:["$m = m_0 (1 - v^2/c^2)$","$m = m_0 \\sqrt{1 - v^2/c^2}$","$m = m_0 c^2$","$m = m_0 / \\sqrt{1 - v^2/c^2}$"], correct:3},
+    {type:"mc", q:"Позната Ајнштајнова једначина $E = mc^2$ представља:",
+     opts:["Само кинетичку енергију","Само енергију мировања","Укупну релативистичку енергију","Потенцијалну енергију"], correct:2},
+    {type:"mc", q:"Енергија мировања ($E_0$) дефинисана је као:",
+     opts:["$E_0 = (1/2)m_0 v^2$","$E_0 = 0$","$E_0 = mc^2$","$E_0 = m_0 c^2$"], correct:3},
+    {type:"mc", q:"Релативистичка кинетичка енергија ($E_k$) једнака је:",
+     opts:["$E_k = (1/2)m v^2$","$E_k = E_0$","$E_k = E - E_0$ (разлици укупне енергије и енергије мировања)","$E_k = E + E_0$ (збиру укупне енергије и енергије мировања)"], correct:2},
+    {type:"mc", q:"Шта је фотоелектрични ефекат?",
+     opts:["Појава да метали светле када се загреју.","Претварање светлости у топлоту унутар метала.","Појава избацивања електрона из метала помоћу светлости.","Појава да електрони емитују светлост приликом судара."], correct:2},
+    {type:"mc", q:"Шта представља 'излазни рад' ($A_i$)?",
+     opts:["Рад који изврши упадни фотон.","Кинетичку енергију коју електрон има након изласка.","Минималну енергију коју електрон треба да прими да би напустио површину метала.","Енергију која се претвара у топлоту."], correct:2},
+    {type:"mc", q:"Како гласи Ајнштајнова једначина фотоефекта?",
+     opts:["$A_i = hf + E_k$","$hf = A_i + E_k$","$E_k = hf - A_i \\cdot c^2$","$hf = A_i - E_k$"], correct:1},
+    {type:"mc", q:"Шта је апсолутно црно тело?",
+     opts:["Тело које рефлектује сву упадну светлост.","Тело које не може да емитује зрачење.","Идеално тело које тотално апсорбује целокупно зрачење које на њега пада.","Тело које емитује само црну светлост."], correct:2}
+  ];
+
+  var TF_QUESTIONS = [
+    {type:"tf", q:"У класичној физици (пре Ајнштајна) сматрало се да су дужина, маса и време апсолутне величине.", correct: true },
+    {type:"tf", q:"Мајкелсон-Морлијев оглед је експериментално доказао постојање етра.", correct: false },
+    {type:"tf", q:"Честице са масом мировања једнаком нули (као што су фотони) могу да се крећу брзином светлости.", correct: true },
+    {type:"tf", q:"У релативистичкој механици, закон одржања масе и закон одржања енергије су два потпуно одвојена и независна закона.", correct: false },
+    {type:"tf", q:"Материјално тело (са масом мировања $m_0 > 0$) може да достигне или престигне брзину светлости $c$.", correct: false },
+    {type:"tf", q:"'Закочни напон' ($U_z$) је напон потребан да се зауставе и најбржи емитовани фотоелектрони.", correct: true },
+    {type:"tf", q:"'Ултраљубичаста катастрофа' је назив за предвиђање класичне теорије да би емисиона моћ црног тела требало да тежи бесконачности у области кратких таласних дужина.", correct: true },
+    {type:"tf", q:"Планкова формула $E=hf$ показује да енергија фотона расте са порастом његове таласне дужине.", correct: false },
+    {type:"tf", q:"Ајнштајн је проширио Планкову хипотезу, тврдећи да се светлост не само емитује, већ и простире и апсорбује у квантима (фотонима).", correct: true },
+    {type:"tf", q:"Маса мировања фотона је једнака нули.", correct: true },
+    {type:"tf", q:"Импулс фотона је сразмеран његовој таласној дужини.", correct: false }
+  ];
+
+  var MATCH_QUESTIONS = [
+    {type:"match", 
+     q:"Повежи појам из Теорије релативности са одговарајућом формулом или описом:",
+     prompts:[
+        "$l = l_0 \\sqrt{1 - v^2/c^2}$",
+        "$\\Delta t = \\Delta t_0 / \\sqrt{1 - v^2/c^2}$",
+        "$E_0 = m_0 c^2$",
+        "$E_k = E - E_0$",
+        "$E^2 = (pc)^2 + (m_0 c^2)^2$"
+     ],
+     answers:[
+        "Контракција дужине",
+        "Дилатација времена",
+        "Енергија мировања",
+        "Релативистичка кинетичка енергија",
+        "Веза између укупне енергије и импулса"
+     ]},
+    {type:"match", 
+     q:"Повежи појам из фотоелектричног ефекта са одговарајућим описом:",
+     prompts:[
+        "$hf$",
+        "$A_i$",
+        "$E_k$",
+        "$U_z$"
+     ],
+     answers:[
+        "Енергија упадног фотона",
+        "Излазни рад метала",
+        "Кинетичка енергија електрона",
+        "Напон за заустављање електрона"
+     ]}
+  ];
+  
+  var TOTAL_IN_BANK = MC_QUESTIONS.length + TF_QUESTIONS.length + MATCH_QUESTIONS.length;
+  var CURRENT = { items: [], finished: false, name: "" };
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i=a.length-1; i>0; i--) {
+      var j = Math.floor(Math.random()*(i+1));
+      var t = a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+
+  function shuffleOptions(item){
+    if (item.type !== 'mc') return item; 
+    var bundle = item.opts.map(function(txt, i){
+      return { text: txt, isCorrect: (i === item.correct) };
+    });
+    var mixed = shuffle(bundle);
+    var newCorrect = -1;
+    for (var k=0; k<mixed.length; k++){
+      if (mixed[k].isCorrect){ newCorrect = k; break; }
+    }
+    return { q: item.q, opts: mixed.map(function(x){ return x.text; }), correct: newCorrect, type: 'mc' };
+  }
+
+  function pickSet(){
+    var mcSet = shuffle(MC_QUESTIONS).slice(0, 10);
+    var tfSet = shuffle(TF_QUESTIONS).slice(0, 3);
+    var matchSet = shuffle(MATCH_QUESTIONS).slice(0, 2);
+    var out = [];
+
+    for (var i=0; i<mcSet.length; i++){
+      out.push(shuffleOptions(mcSet[i]));
+    }
+    for (var i=0; i<tfSet.length; i++){
+      out.push(JSON.parse(JSON.stringify(tfSet[i])));
+    }
+    for (var i=0; i<matchSet.length; i++){
+      var newItem = JSON.parse(JSON.stringify(matchSet[i]));
+      newItem.shuffledAnswers = shuffle(newItem.answers);
+      out.push(newItem);
+    }
+    return shuffle(out);
+  }
+
+  function letterFor(idx){ return String.fromCharCode(0x410 + idx); } 
+
+  function render(){
+    var quizEl = document.getElementById('quiz');
+    var progress = document.getElementById('progress');
+    quizEl.innerHTML = '';
+    progress.textContent = 'Питања: ' + CURRENT.items.length + ' / ' + TOTAL_IN_BANK + ' (укупно)';
+
+    for (var idx=0; idx<CURRENT.items.length; idx++){
+      var it = CURRENT.items[idx];
+      var card = document.createElement('div'); card.className = 'card';
+      var h = document.createElement('h3'); h.className='q-h'; h.innerHTML = (idx+1) + '. ' + it.q;
+      card.appendChild(h);
+
+      var optsContainer = document.createElement('div');
+      
+      switch(it.type) {
+        case 'tf':
+          optsContainer.className = 'options';
+          var optionsTF = [ { text: "Тачно", value: "true" }, { text: "Нетачно", value: "false" } ];
+          for (var o=0; o<optionsTF.length; o++){
+            var id = 'q'+idx+'_o'+o;
+            var label = document.createElement('label'); label.className='opt'; label.setAttribute('for', id);
+            var input = document.createElement('input'); input.type='radio'; input.name='q'+idx; input.id=id; input.value=optionsTF[o].value;
+            var txt = document.createElement('div'); txt.className='opt-text'; txt.textContent = optionsTF[o].text;
+            label.appendChild(input); label.appendChild(txt);
+            optsContainer.appendChild(label);
+          }
+          break;
+
+        case 'match':
+          optsContainer.className = 'match-container';
+          for (var p=0; p<it.prompts.length; p++) {
+            var itemEl = document.createElement('div'); itemEl.className = 'match-item';
+            var promptEl = document.createElement('div');
+            promptEl.className = 'match-prompt';
+            promptEl.innerHTML = it.prompts[p];
+            
+            var selectEl = document.createElement('select');
+            selectEl.className = 'match-select';
+            selectEl.name = 'q'+idx+'_m'+p;
+            
+            var defaultOpt = document.createElement('option');
+            defaultOpt.value = "";
+            defaultOpt.textContent = "Изабери...";
+            selectEl.appendChild(defaultOpt);
+            
+            for (var a=0; a<it.shuffledAnswers.length; a++) {
+              var opt = document.createElement('option');
+              opt.value = it.shuffledAnswers[a];
+              opt.innerHTML = it.shuffledAnswers[a]; 
+              selectEl.appendChild(opt);
+            }
+            itemEl.appendChild(promptEl);
+            itemEl.appendChild(selectEl);
+            optsContainer.appendChild(itemEl);
+          }
+          break;
+        
+        case 'mc':
+        default:
+          optsContainer.className = 'options';
+          for (var o=0; o<it.opts.length; o++){
+            var id = 'q'+idx+'_o'+o;
+            var label = document.createElement('label'); label.className='opt'; label.setAttribute('for', id);
+            var input = document.createElement('input'); input.type='radio'; input.name='q'+idx; input.id=id; input.value=String(o);
+            var txt = document.createElement('div'); txt.className='opt-text'; 
+            txt.innerHTML = '<span class="muted ans">' + letterFor(o) + ')</span> ' + it.opts[o];
+            label.appendChild(input); label.appendChild(txt);
+            optsContainer.appendChild(label);
+          }
+          break;
+      }
+      card.appendChild(optsContainer);
+      quizEl.appendChild(card);
+    }
+    document.getElementById('score').textContent = 'Ученик: ' + (CURRENT.name || '—') + ' | Резултат: —';
+    CURRENT.finished = false;
+  }
+
+  function grade(){
+    if (CURRENT.finished) return; 
+
+    var correct = 0;
+    var cards = document.querySelectorAll('#quiz .card');
+
+    for (var i=0; i<CURRENT.items.length; i++){
+      var it = CURRENT.items[i];
+      var card = cards[i];
+
+      switch(it.type) {
+        case 'tf':
+          var radiosTF = document.querySelectorAll('input[name="q'+i+'"]');
+          var chosenVal = "";
+          for (var j=0;j<radiosTF.length;j++){
+            if (radiosTF[j].checked){ chosenVal = radiosTF[j].value; break; }
+          }
+          var isCorrectTF = (chosenVal === String(it.correct));
+          if (isCorrectTF) correct++;
+          var labelsTF = card.querySelectorAll('label.opt');
+          for (var k=0; k<labelsTF.length; k++){
+            var labelVal = radiosTF[k].value;
+            if (labelVal === String(it.correct)) {
+              labelsTF[k].className = 'opt correct';
+            } else if (labelVal === chosenVal && !isCorrectTF) {
+              labelsTF[k].className = 'opt wrong';
+            }
+            radiosTF[k].disabled = true;
+          }
+          break;
+
+        case 'match':
+          var selects = card.querySelectorAll('select.match-select');
+          var correctMatches = 0;
+          for (var m=0; m<selects.length; m++) {
+            var chosenAnswer = selects[m].value;
+            var correctAnswer = it.answers[m]; 
+            if (chosenAnswer === correctAnswer) {
+              correctMatches++;
+              selects[m].className = 'match-select correct';
+            } else {
+              selects[m].className = 'match-select wrong';
+              var correctAnsEl = document.createElement('span');
+              correctAnsEl.innerHTML = ' (Тачно: ' + correctAnswer + ')'; 
+              correctAnsEl.style.color = 'var(--accent-2)';
+              selects[m].parentElement.appendChild(correctAnsEl);
+            }
+            selects[m].disabled = true;
+          }
+          if (correctMatches === it.prompts.length) {
+            correct++;
+          }
+          break;
+
+        case 'mc':
+        default:
+          var radiosMC = document.querySelectorAll('input[name="q'+i+'"]');
+          var chosen = -1;
+          
+          // === ИСПРАВКА ЈЕ ОВДЕ ===
+          for (var j=0;j<radiosMC.length;j++){
+          // === КРАЈ ИСПРАВКЕ ===
+            if (radiosMC[j].checked){ chosen = parseInt(radiosMC[j].value,10); break; }
+          }
+          var labelsMC = card.querySelectorAll('label.opt');
+          for (var k=0;k<labelsMC.length;k++){ labelsMC[k].className = 'opt'; }
+          if (chosen === it.correct){
+            correct++;
+            if (labelsMC[chosen]) { labelsMC[chosen].className = 'opt correct'; }
+          } else if (chosen !== -1) {
+            if (labelsMC[chosen]) { labelsMC[chosen].className = 'opt wrong'; }
+            if (labelsMC[it.correct]) { labelsMC[it.correct].className = 'opt correct'; }
+          } else {
+            if (labelsMC[it.correct]) { labelsMC[it.correct].className = 'opt correct'; }
+          }
+          for (var r=0;r<radiosMC.length;r++){ radiosMC[r].disabled = true; }
+          break;
+      }
+    }
+
+    // === Додавање оцене ===
+    var ocena = 0;
+    if (correct <= 4) {
+        ocena = 2; // (0-4 тачна)
+    } else if (correct <= 8) {
+        ocena = 3; // (5-8 тачних)
+    } else if (correct <= 12) {
+        ocena = 4; // (9-12 тачних)
+    } else {
+        ocena = 5; // (13-15 тачних)
+    }
+    // === КРАЈ ===
+
+    document.getElementById('score').textContent = 'Ученик: ' + (CURRENT.name || '—') + ' | Резултат: ' + correct + ' / ' + CURRENT.items.length + ' | Оцена: ' + ocena;
+    CURRENT.finished = true;
+    
+    document.getElementById('submitBtn').style.display = 'none';
+
+    saveResult({
+      name: CURRENT.name,
+      score: correct,
+      total: CURRENT.items.length,
+      ocena: ocena, 
+      timestamp: new Date().toISOString()
+    });
+    
+    renderHistory();
+    
+    if (window.MathJax) {
+      MathJax.typesetPromise();
+    }
+    
+    window.scrollTo(0,0); 
+  }
+
+  // --- Функције за чување историје ---
+  function saveResult(result) {
+    try {
+      var history = JSON.parse(localStorage.getItem('quizHistory')) || [];
+      history.push(result);
+      localStorage.setItem('quizHistory', JSON.stringify(history));
+    } catch (e) { console.error("Грешка при чувању у localStorage:", e); }
+  }
+
+  function renderHistory() {
+    var historyEl = document.getElementById('history');
+    var history = [];
+    try {
+      history = JSON.parse(localStorage.getItem('quizHistory')) || [];
+    } catch (e) { history = []; }
+
+    if (history.length === 0) {
+      historyEl.style.display = 'none';
+      return;
+    }
+    historyEl.style.display = 'block';
+    
+    var html = '<h2>Историја покушаја</h2>'; 
+    html += '<ul>';
+    for (var i = history.length - 1; i >= 0; i--) {
+      var item = history[i];
+      var d = new Date(item.timestamp);
+      var dStr = d.toLocaleString('sr-RS', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      
+      var ocenaText = item.ocena ? ' | Оцена: ' + item.ocena : ''; 
+      
+      html += '<li>';
+      html += '<span class="hist-name">' + (item.name || 'Непознат') + '</span> — ';
+      html += '<span class="hist-score">Резултат: ' + item.score + ' / ' + item.total + ocenaText + '</span>';
+      html += '<div class="hist-date">' + dStr + '</div>';
+      html += '</li>';
+    }
+    html += '</ul>';
+    historyEl.innerHTML = html;
+  }
+
+  // --- Логика покретања квиза ---
+  function startNewQuiz(name) {
+    CURRENT.name = name;
+    CURRENT.items = pickSet();
+    CURRENT.finished = false;
+    
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('quizContainer').style.display = 'block';
+    document.getElementById('submitBtn').style.display = 'inline-block';
+    
+    render();
+    
+    if (window.MathJax) {
+      MathJax.typesetPromise();
+    }
+    
+    window.scrollTo(0,0);
+  }
+
+  document.getElementById('startBtn').addEventListener('click', function(){
+    var name = document.getElementById('studentNameInput').value;
+    if (!name || name.trim().length < 3) {
+      alert('Молимо унесите своје име и презиме.');
+      return;
+    }
+    startNewQuiz(name.trim());
+  }, false);
+
+  document.getElementById('submitBtn').addEventListener('click', grade, false);
+  
+  // === Admin дугме ===
+  document.getElementById('adminClearBtn').addEventListener('click', function() {
+    
+    // --- ПРОМЕНИТЕ ВАШУ ЛОЗИНКУ ОВДЕ ---
+    var adminPassword = "profesor123"; 
+    // ------------------------------------
+
+    var pass = prompt("Да бисте обрисали све резултате, унесите лозинку:", "");
+    
+    if (pass === null) {
+      return;
+    }
+
+    if (pass === adminPassword) {
+      if (confirm('СИГУРНО ЖЕЛИТЕ ДА ОБРИШЕТЕ СВУ ИСТОРИЈУ? Ово је неповратно.')) {
+        try {
+          localStorage.removeItem('quizHistory');
+          renderHistory(); 
+          alert('Историја резултата је успешно обрисана.');
+        } catch (e) {
+          alert('Дошло је до грешке при брисању.');
+        }
+      }
+    } else {
+      alert('Погрешна лозинка!');
+    }
+  }, false);
+
+  renderHistory();
+});
+</script>
+</body>
+</html>
