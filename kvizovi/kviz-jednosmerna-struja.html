@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Квиз: Једносмерна струја</title>
+<style>
+  :root{
+    --bg1:#1e1b4b;
+    --bg2:#6d28d9;
+    --card:#0b1020e6;
+    --accent:#a78bfa;
+    --accent-2:#60a5fa;
+    --good-bg:#0f2d1c;
+    --good-br:#14532d;
+    --bad-bg:#2a0f10;
+    --bad-br:#5b1111;
+    --text:#f8fafc;
+    --muted:#cbd5e1;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, sans-serif;
+    color: var(--text, #f8fafc);
+    background: radial-gradient(1200px 600px at 20% 0%, var(--bg2, #6d28d9), transparent 60%),
+                radial-gradient(1000px 800px at 90% 10%, #7c3aed, transparent 60%),
+                linear-gradient(160deg, var(--bg1, #1e1b4b), #111827 60%);
+    background-attachment: fixed;
+  }
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 24px; }
+  header{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom: 16px; }
+  .title{
+    font-size: clamp(20px, 2.6vw, 34px);
+    font-weight: 800; 
+    letter-spacing: .5px; 
+  }
+  .badge{
+    padding: 6px 10px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent-2, #60a5fa), var(--accent, #a78bfa));
+    color:#0b1020; font-weight:700; font-size: 13px;
+    box-shadow: 0 10px 30px #00000055, inset 0 1px 0 #ffffff66;
+  }
+  .card{
+    background: var(--card, #0b1020e6);
+    border:1px solid #2e2f55;
+    border-radius: 18px;
+    padding: 18px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 10px 30px #00000055;
+    margin-bottom: 14px;
+  }
+  .q-h{ font-weight: 700; font-size: 18px; margin: 0 0 10px 0; color:#e5e7eb; }
+  .options{ display:grid; gap:10px }
+  label.opt{
+    display:flex; gap:10px; align-items:flex-start;
+    padding: 12px 14px;
+    border:1px solid #2e2f55;
+    border-radius: 12px;
+    background: #141633;
+    transition: transform .08s ease, border-color .15s ease, background .15s ease;
+  }
+  label.opt:hover{ transform: translateY(-1px); border-color:#4f46e5; background:#171a3a; }
+  .opt input{ margin-top: 3px; }
+  .opt-text{ line-height:1.45 }
+  .muted{ color:var(--muted, #cbd5e1); font-size:14px }
+  .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-top:18px }
+  button{
+    appearance:none; border:none; cursor:pointer;
+    padding:12px 16px; border-radius:12px; font-weight:800; letter-spacing:.3px;
+    background: linear-gradient(90deg, var(--accent-2, #60a5fa), var(--accent, #a78bfa));
+    color:#0b1020; box-shadow: 0 10px 30px #00000055, inset 0 1px 0 #ffffff66;
+  }
+  button.secondary{
+    background:#0b1020; color:var(--text, #f8fafc); border:1px solid #2e2f55; box-shadow:none
+  }
+  .score{ font-weight:800; font-size: 18px; }
+  footer{ margin-top:20px; color:var(--muted, #cbd5e1); font-size:13px; text-align:center }
+  .correct{ border-color: var(--good-br, #14532d) !important; background: var(--good-bg, #0f2d1c) !important; }
+  .wrong{ border-color: var(--bad-br, #5b1111) !important; background: var(--bad-bg, #2a0f10) !important; }
+
+  /* noscript upozorenje */
+  .noscript {
+    margin: 16px 0;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #3b0a0a;
+    border: 1px solid #7a1c1c;
+    color: #fff1f2;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">Квиз: Једносмерна струја</div>
+      <div class="badge" id="progress">Учитавање...</div>
+    </header>
+
+    <noscript>
+      <div class="noscript">
+        На овом приказу JavaScript је искључен (нпр. iOS „Quick Look“ преглед). 
+        Да би квиз радио, отвори страницу у Safari-ју: поделити → **Open in Safari**,
+        или постави фајл на хост (нпр. GitHub Pages) и отвори линк.
+      </div>
+    </noscript>
+
+    <div id="quiz"></div>
+
+    <div class="card controls">
+      <div class="score" id="score">Резултат: —</div>
+      <div style="display:flex;gap:10px">
+        <button id="submitBtn" title="Предај одговоре">ПРЕДАЈ КВИЗ</button>
+        <button id="retryBtn" class="secondary" title="Ново мешање питања">ПРОБАЈ ПОНОВО</button>
+      </div>
+    </div>
+
+    <footer>Слична питања ће бити и на тесту, да бисте боље запамтили урадите га више пута!</footer>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  var ALL_QUESTIONS = [
+    {q:"Шта је електрична струја?",
+     opts:["Хаотично кретање наелектрисаних честица.","Усмерено кретање наелектрисаних честица.","Постојање разлике потенцијала.","Судар наелектрисаних честица са јонима решетке."], correct:1},
+    {q:"Који су носиоци наелектрисања у металима?",
+     opts:["Позитивни и негативни јони.","Само позитивни јони.","Јони и електрони.","Слободни електрони."], correct:3},
+    {q:"Која од наведених супстанци је пример изолатора?",
+     opts:["Графит.","Водени раствор соли.","Угаљ.","Гума."], correct:3},
+    {q:"Шта је електромоторна сила (ЕМС)?",
+     opts:["Сила која делује на електроне у проводнику.","Рад потребан да се наелектрисање пренесе кроз спољашњи део кола.","Рад који изврши страна сила да пренесе јединично наелектрисање унутар извора.","Разлика потенцијала на крајевима потрошача."], correct:2},
+    {q:"Како је дефинисан технички смер струје?",
+     opts:["Од негативног ка позитивном полу извора.","Поклапа се са смером кретања електрона.","Од позитивног ка негативном полу извора у спољашњем делу кола.","Зависи од врсте потрошача."], correct:2},
+    {q:"Како се израчунава јачина електричне струје (I)?",
+     opts:["I = q ⋅ t","I = t / q","I = q / t","I = A / q"], correct:2},
+    {q:"Која је јединица за густину електричне струје (j)?",
+     opts:["Ампер (A)","Ампер по метру (A/m)","Кулон по секунди (C/s)","Ампер по метру квадратном (A/m²)"], correct:3},
+    {q:"Како гласи Омов закон?",
+     opts:["U = I ⋅ R²","I = U / R","R = U ⋅ I","I = R / U"], correct:1},
+    {q:(document.body.innerHTML.includes("Џул-Ленцов") ? "Како гласи Џул-Ленцов закон?" : "Која формула описује Џулов закон?"),
+     opts:["Q = U ⋅ I ⋅ t","Q = (U² / R) ⋅ t","Q = I² ⋅ R ⋅ t","Q = I ⋅ R ⋅ t"], correct:2}, // Pitanje 9 - Obe opcije A, B, C su tacne izvedene forme. Ali C je osnovna.
+    {q:"Од чега НЕ зависи електрична отпорност (R) проводника?",
+     opts:["Од дужине проводника.","Од врсте материјала (специфичне отпорности).","Од површине попречног пресека.","Од напона на крајевима проводника."], correct:3},
+    {q:"Како се рачуна укупна (еквивалентна) отпорност (Re) за два отпорника везана у серију?",
+     opts:["Re = (R1 ⋅ R2) / (R1 + R2)","1/Re = 1/R1 + 1/R2","Re = R1 + R2","Re = R1 - R2"], correct:2},
+    {q:"Шта је тачно за редну (серијску) везу отпорника?",
+     opts:["Напон је исти на свим отпорницима.","Укупна струја се грана.","Струја је иста кроз све отпорнике.","Укупна отпорност се смањује."], correct:2},
+    {q:"Како се рачуна укупна (еквивалентна) отпорност (Re) за два отпорника везана паралелно?",
+     opts:["Re = R1 + R2","1/Re = 1/R1 + 1/R2","Re = R1 ⋅ R2","Re = (R1 + R2) / 2"], correct:1},
+    {q:"Шта је тачно за паралелну везу отпорника?",
+     opts:["Струја је иста кроз све отпорнике.","Напон је исти на свим отпорницима.","Укупан напон једнак је збиру напона на отпорницима.","Укупна отпорност се повећава."], correct:1},
+    {q:"Шта каже Прво Кирхофово правило?",
+     opts:["Збир свих напона у колу је нула.","Збир струја које улазе у чвор једнак је збиру струја које излазе из чвора.","Збир свих електромоторних сила једнак је нули.","Збир падова напона у контури једнак је нули."], correct:1},
+    {q:"Шта каже Друго Кирхофово правило?",
+     opts:["Збир свих струја у контури је нула.","Збир свих отпора у контури једнак је ЕМС.","Збир свих ЕМС једнак је збиру свих струја.","Збир свих ЕМС једнак је збиру свих падова напона (I⋅R) у контури."], correct:3},
+    {q:"Која је јединица за електромоторну силу (ЕМС)?",
+     opts:["Ампер (А)","Џул (J)","Ом (Ω)","Волт (V)"], correct:3},
+    {q:"Физички смер струје одговара:",
+     opts:["Смеру од (+) ка (-) полу извора.","Смеру кретања електрона.","Техничком смеру струје.","Смеру кретања позитивних јона у металима."], correct:1},
+    {q:"Како електрична отпорност (R) проводника зависи од његове дужине (l)?",
+     opts:["Обрнуто је сразмерна дужини.","Не зависи од дужине.","Сразмерна је квадрату дужине.","Сразмерна је дужини."], correct:3},
+    {q:"На ком принципу раде топљиви осигурачи?",
+     opts:["На принципу Омовог закона.","На принципу Првог Кирхофовог правила.","На топлотном дејству струје (Џул-Ленцов закон).","На карактеристикама полупроводника."], correct:2},
+    {q:"Шта у Другом Кирхофовом правилу ( Σϵ = Σ(I⋅R) ) представља производ I⋅R ?",
+     opts:["Електромоторну силу извора.","Пад напона на отпорнику.","Јачину струје у контури.","Ослобођену топлоту у контури."], correct:1}
+  ];
+
+  var MAX_PER_RUN = 10; // Kviz ce imati 10 pitanja
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i=a.length-1; i>0; i--) {
+      var j = Math.floor(Math.random()*(i+1));
+      var t = a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+
+  function shuffleOptions(item){
+    var bundle = item.opts.map(function(txt, i){
+      return { text: txt, isCorrect: (i === item.correct) };
+    });
+    var mixed = shuffle(bundle);
+    var newCorrect = -1;
+    for (var k=0; k<mixed.length; k++){
+      if (mixed[k].isCorrect){ newCorrect = k; break; }
+    }
+    return { opts: mixed.map(function(x){ return x.text; }), correct: newCorrect };
+  }
+
+  function pickSet(){
+    var base = ALL_QUESTIONS.length > MAX_PER_RUN ? shuffle(ALL_QUESTIONS).slice(0, MAX_PER_RUN) : ALL_QUESTIONS.slice();
+    var out = [];
+    for (var i=0;i<base.length;i++){
+      var s = shuffleOptions(base[i]);
+      out.push({ q:base[i].q, opts:s.opts, correct:s.correct });
+    }
+    return out;
+  }
+
+  var CURRENT = { items: pickSet(), finished:false };
+
+  function letterFor(idx){ return String.fromCharCode(0x410 + idx); } // А, Б, В, Г ...
+
+  function render(){
+    var quizEl = document.getElementById('quiz');
+    var progress = document.getElementById('progress');
+    quizEl.innerHTML = '';
+    progress.textContent = 'Питања: ' + CURRENT.items.length + ' / ' + ALL_QUESTIONS.length;
+
+    for (var idx=0; idx<CURRENT.items.length; idx++){
+      var it = CURRENT.items[idx];
+      var card = document.createElement('div'); card.className = 'card';
+      var h = document.createElement('h3'); h.className='q-h'; h.textContent = (idx+1) + '. ' + it.q;
+      card.appendChild(h);
+
+      var opts = document.createElement('div'); opts.className='options';
+
+      for (var o=0; o<it.opts.length; o++){
+        var id = 'q'+idx+'_o'+o;
+        var label = document.createElement('label'); label.className='opt'; label.setAttribute('for', id);
+
+        var input = document.createElement('input'); input.type='radio'; input.name='q'+idx; input.id=id; input.value=String(o);
+        var txt = document.createElement('div'); txt.className='opt-text'; txt.innerHTML = '<span class="muted ans">' + letterFor(o) + ')</span> ' + it.opts[o];
+
+        label.appendChild(input); label.appendChild(txt);
+        opts.appendChild(label);
+      }
+      card.appendChild(opts);
+      quizEl.appendChild(card);
+    }
+
+    document.getElementById('score').textContent = 'Резултат: —';
+    CURRENT.finished = false;
+  }
+
+  function grade(){
+    var correct = 0;
+    var cards = document.querySelectorAll('#quiz .card');
+
+    for (var i=0; i<CURRENT.items.length; i++){
+      var radios = document.querySelectorAll('input[name="q'+i+'"]');
+      var chosen = -1;
+      for (var j=0;j<radios.length;j++){
+        if (radios[j].checked){ chosen = parseInt(radios[j].value,10); break; }
+      }
+      
+      var labels = cards[i].querySelectorAll('label.opt');
+      for (var k=0;k<labels.length;k++){ 
+        labels[k].className = 'opt'; 
+      }
+
+      if (chosen === CURRENT.items[i].correct){
+        correct++;
+        if (labels[chosen]) { labels[chosen].className = 'opt correct'; }
+      } else if (chosen !== -1) {
+        if (labels[chosen]) { labels[chosen].className = 'opt wrong'; }
+        if (labels[CURRENT.items[i].correct]) { labels[CURRENT.items[i].correct].className = 'opt correct'; }
+      } else {
+        if (labels[CURRENT.items[i].correct]) { labels[CURRENT.items[i].correct].className = 'opt correct'; }
+      }
+
+      for (var r=0;r<radios.length;r++){ radios[r].disabled = true; }
+    }
+
+    document.getElementById('score').textContent = 'Резултат: ' + correct + ' / ' + CURRENT.items.length;
+    CURRENT.finished = true;
+  }
+
+  render();
+  document.getElementById('submitBtn').addEventListener('click', grade, false);
+  document.getElementById('retryBtn').addEventListener('click', function(){
+    CURRENT.items = pickSet();
+    render();
+    window.scrollTo(0,0);
+  }, false);
+
+});
+</script>
+</body>
+</html>
