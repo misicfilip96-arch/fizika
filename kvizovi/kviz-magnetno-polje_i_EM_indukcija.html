@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Квиз: Магнетно поље и ЕМ индукција</title>
+
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+  :root{
+    --bg1:#1e1b4b;
+    --bg2:#6d28d9;
+    --card:#0b1020e6;
+    --accent:#a78bfa;
+    --accent-2:#60a5fa;
+    --good-bg:#0f2d1c;
+    --good-br:#14532d;
+    --bad-bg:#2a0f10;
+    --bad-br:#5b1111;
+    --text:#f8fafc;
+    --muted:#cbd5e1;
+  }
+  *{box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    margin:0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, sans-serif;
+    color: var(--text, #f8fafc);
+    background: radial-gradient(1200px 600px at 20% 0%, var(--bg2, #6d28d9), transparent 60%),
+                radial-gradient(1000px 800px at 90% 10%, #7c3aed, transparent 60%),
+                linear-gradient(160deg, var(--bg1, #1e1b4b), #111827 60%);
+    background-attachment: fixed;
+  }
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 24px; }
+  header{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom: 16px; }
+  .title{
+    font-size: clamp(20px, 2.6vw, 34px);
+    font-weight: 800; letter-spacing: .5px;
+  }
+  .badge{
+    padding: 6px 10px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent-2, #60a5fa), var(--accent, #a78bfa));
+    color:#0b1020; font-weight:700; font-size: 13px;
+    box-shadow: 0 10px 30px #00000055, inset 0 1px 0 #ffffff66;
+  }
+  .card{
+    background: var(--card, #0b1020e6);
+    border:1px solid #2e2f55;
+    border-radius: 18px;
+    padding: 18px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 10px 30px #00000055;
+    margin-bottom: 14px;
+  }
+  .q-h{ font-weight: 700; font-size: 18px; margin: 0 0 10px 0; color:#e5e7eb; }
+  .options{ display:grid; gap:10px }
+  label.opt{
+    display:flex; gap:10px; align-items:flex-start;
+    padding: 12px 14px;
+    border:1px solid #2e2f55;
+    border-radius: 12px;
+    background: #141633;
+    transition: transform .08s ease, border-color .15s ease, background .15s ease;
+  }
+  label.opt:hover{ transform: translateY(-1px); border-color:#4f46e5; background:#171a3a; }
+  .opt input[type="radio"]{ margin-top: 3px; }
+  .opt-text{ line-height:1.45 }
+  .muted{ color:var(--muted, #cbd5e1); font-size:14px }
+  .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-top:18px }
+  button{
+    appearance:none; border:none; cursor:pointer;
+    padding:12px 16px; border-radius:12px; font-weight:800; letter-spacing:.3px;
+    background: linear-gradient(90deg, var(--accent-2, #60a5fa), var(--accent, #a78bfa));
+    color:#0b1020; box-shadow: 0 10px 30px #00000055, inset 0 1px 0 #ffffff66;
+  }
+  button.secondary{
+    background:#0b1020; color:var(--text, #f8fafc); border:1px solid #2e2f55; box-shadow:none
+  }
+  .score{ font-weight:800; font-size: 18px; }
+  footer{ margin-top:20px; color:var(--muted, #cbd5e1); font-size:13px; text-align:center }
+  .correct{ border-color: var(--good-br, #14532d) !important; background: var(--good-bg, #0f2d1c) !important; }
+  .wrong{ border-color: var(--bad-br, #5b1111) !important; background: var(--bad-bg, #2a0f10) !important; }
+  .match-container { display: grid; gap: 12px; }
+  .match-item {
+    display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center;
+    background: #141633; border-radius: 8px; padding: 10px 14px; border: 1px solid #2e2f55;
+  }
+  .match-prompt { font-size: 15px; line-height: 1.4; }
+  select.match-select {
+    font-family: inherit; font-size: 15px; font-weight: 600; color: var(--text);
+    background: #0b1020; border: 1px solid #2e2f55; border-radius: 8px; padding: 8px 10px; cursor: pointer;
+  }
+  select.match-select:focus { border-color: #4f46e5; outline: none; }
+  select.correct { border-color: var(--good-br, #14532d) !important; background: var(--good-bg, #0f2d1c) !important; }
+  select.wrong { border-color: var(--bad-br, #5b1111) !important; background: var(--bad-bg, #2a0f10) !important; }
+  .pill{ display:inline-flex; align-items:center; gap:8px; font-size:13px; padding:6px 10px; border-radius:999px; background:#0b1020; border:1px solid #2e2f55 }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">Квиз: Магнетно поље и ЕМ индукција</div>
+      <div class="badge" id="progress">Учитавање...</div>
+    </header>
+
+    <div id="quiz"></div>
+
+    <div class="card controls">
+      <div class="score" id="score">Тачно: —</div>
+      <div style="display:flex;gap:10px">
+        <button id="submitBtn" title="Предај одговоре">ПРЕДАЈ ОДГОВОРЕ</button>
+        <button id="retryBtn" class="secondary" title="Пробај поново">ПРОБАЈ ПОНОВО</button>
+      </div>
+    </div>
+
+    <footer>Вежба за предстојећи тест. Вежбајте!</footer>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  // === ПИТАЊА (из документа "magnetno polje") ===
+
+  var MC_QUESTIONS = [
+    {q:"Како се назива руда гвожђа код које је први пут примећена појава магнетизма?", 
+     opts:["Хематит","Пирит","Магнетит","Боксит"], correct:2},
+    {q:"Која је основна карактеристика линија магнетног поља?", 
+     opts:["Почињу на N, завршавају на S (отворене су).","Увек су паралелне са површином магнета.","То су затворене петље, без почетка и краја.","Почињу на S, завршавају на N."], correct:2},
+    {q:"Јединица за магнетну индукцију $\\mathbf{B}$ је:", 
+     opts:["Вебер (Wb)","Тесла (T)","Хенри (H)","Ампер (A)"], correct:1},
+    {q:"Зашто се северни пол компаса окреће ка географском северу Земље?", 
+     opts:["Зато што је на географском северу северни магнетни пол Земље.","Зато што је на географском северу јужни магнетни пол Земље.","Зато што магнетни полови Земље нису поравнати са географским.","Због Лоренцове силе."], correct:1},
+    {q:"Како се одређује смер магнетног поља око правог струјног проводника?", 
+     opts:["Правилом леве руке.","Правилом десне руке.","Поређењем са Земљиним пољем.","Помоћу Амперове силе."], correct:1},
+    {q:"Магнетна индукција на растојању $r$ од бесконачно дугог праволинијског проводника је:", 
+     opts:["$B=\\mu_0 I r / (2\\pi)$","$B=\\mu_0 I / (2\\pi r)$","$B=\\mu_0 I / (4\\pi r^2)$","$B=\\mu_0 I r^2$"], correct:1},
+    {q:"Комбинација калема и гвозденог језгра унутар њега назива се:", 
+     opts:["Трансформатор","Електромотор","Електромагнет","Магнетик"], correct:2},
+    {q:"Магнетни флукс $\\Phi$ је максималан када је угао $\\theta$ између $\\mathbf{B}$ и нормале на површину:", 
+     opts:["$0^\\circ$","$30^\\circ$","$90^\\circ$","$180^\\circ$"], correct:2},
+    {q:"Како се назива сила којом магнетно поље делује на наелектрисану честицу у покрету?", 
+     opts:["Амперова сила","Лоренцова сила","Магнетни флукс","Електрична сила"], correct:1},
+    {q:"Уређај са укрштеним $\\mathbf{E}$ и $\\mathbf{B}$ који пропушта само честице брзине $v=E/B$ је:", 
+     opts:["Циклотрон","Масени спектрометар","Селектор брзине","Електромотор"], correct:2},
+    {q:"Сила магнетног поља на проводник са струјом је:", 
+     opts:["Амперова сила","Лоренцова сила","Магнетизација","Индукција"], correct:0},
+    {q:"Два паралелна проводника са супротним смеровима струје:", 
+     opts:["Привлаче се.","Одбијају се.","Не делују један на другог.","Ротирају."], correct:1},
+    {q:"Рад електромотора заснива се на:", 
+     opts:["Лоренцовој сили на честицу.","Амперовој сили на рам са струјом (спрег сила).","Селектору брзине.","Магнетној хистерези."], correct:1},
+    {q:"Која врста магнетика слабо одбија магнет и има $\\mu_r<1$?", 
+     opts:["Дијамагнетици","Парамагнетици","Феромагнетици","Електромагнетици"], correct:0},
+    {q:"Температура изнад које феромагнетик губи својства и постаје парамагнетик је:", 
+     opts:["Тачка топљења","Киријева температура","Апсолутна нула","Тачка кључања"], correct:1},
+
+    // ЕМ индукција — МЦ
+    {q:"Ко је 1831. открио да променљиво магнетно поље може створити струју?", 
+     opts:["Андре-Мари Ампер","Ханс Кристијан Ерстед","Мајкл Фарадеј","Џејмс Клерк Максвел"], correct:2},
+    {q:"Фарадејев закон за калем са $N$ навојака гласи:", 
+     opts:["$\\mathcal{E}=B\\ell v$","$\\mathcal{E}=\\Phi/t$","$\\mathcal{E}=IR$","$\\mathcal{E}=-N\\, d\\Phi/dt$"], correct:3},
+    {q:"Према Ленцовом правилу, индукована струја:", 
+     opts:["Поклапа се са растућим спољашњим пољем.","Супротставља се промени флукса која ју је изазвала.","Прати смер Лоренцове силе.","Поништава електрично поље у проводнику."], correct:1},
+    {q:"Појава индуковања ЕМС у проводнику услед промене сопствене струје зове се:", 
+     opts:["Узајамна индукција","Самоиндукција","Кондукција","Електромагнетна индукција"], correct:1},
+    {q:"Јединица за индуктивност ($L$ и $M$) је:", 
+     opts:["Хенри (H)","Тесла (T)","Вебер (Wb)","Фарад (F)"], correct:0},
+    {q:"Трансформатори и бежични пуњачи заснивају се на:", 
+     opts:["Лоренцовој сили","Самоиндукцији","Узајамној индукцији","Џуловом закону"], correct:2},
+    {q:"Индукциони решои загревају дно шерпе захваљујући:", 
+     opts:["Директном преносу топлоте са плоче.","Вртложним струјама индуковањим у дну шерпе.","Лоренцовој сили на атоме.","ЕМС самоиндукције у рингли."], correct:1},
+    {q:"Енергија магнетног поља калема $L$ кроз који тече струја $I$:", 
+     opts:["$W=\\tfrac{1}{2}LI^2$","$W=LI$","$W=\\tfrac{1}{2}I^2/R$","$W=\\Phi I$"], correct:0},
+    {q:"Високи напон на свећици настаје услед:", 
+     opts:["Кретања магнета у калему.","Велике ЕМС самоиндукције при наглом прекиду струје.","Узајамне индукције између акумулатора и свећице.","Вртложних струја у мотору."], correct:1}
+  ];
+
+  var TF_QUESTIONS = [
+    // Магнетно поље — ТФ
+    {q:"Ако магнет пресечемо на пола, добија се један чист северни и један чист јужни пол.", correct:false},
+    {q:"Ерстед је први уочио да струја ствара магнетно поље.", correct:true},
+    {q:"Лоренцова сила делује и на мирне наелектрисане честице у магнетном пољу.", correct:false},
+    {q:"Честица која улази нормално у хомогено $\\mathbf{B}$ креће се по кружној путањи.", correct:true},
+    {q:"Два паралелна проводника са истим смером струја се одбијају.", correct:false},
+    {q:"Феромагнетици (Fe, Ni, Co) су јако привлачни, $\\mu_r \\gg 1$.", correct:true},
+
+    // ЕМ индукција — ТФ
+    {q:"Статично магнетно поље изазива константну индуковану струју у затвореном колу.", correct:false},
+    {q:"Знак минус у $\\mathcal{E}=-N\\, d\\Phi/dt$ изражава Ленцово правило.", correct:true},
+    {q:"Када $\\Phi$ опада, индукована струја ствара $\\mathbf{B}$ истог смера (надокнада губитка).", correct:true},
+    {q:"Коефицијент самоиндукције $L$ зависи само од јачине струје.", correct:false},
+    {q:"Калем у DC колу делује као 'електрична инерција' (супротставља се променама струје).", correct:true}
+  ];
+
+  // Спојнице: prompts су лева колона (формуле/поjмови), answers десна колона (парови), док се на екрану десна страна меша.
+  var MATCH_QUESTIONS = [
+    {q:"Повежи појам/величину са формулом (магнетизам):",
+     prompts:[
+        "Амперова сила",
+        "Лоренцова сила",
+        "Поље дугог правог проводника",
+        "Поље у центру соленоида"
+     ],
+     answers:[
+        "$\\;\\;F=B I \\ell\\,\\sin\\alpha$",
+        "$\\;\\;\\vec F = q\\,\\vec v \\times \\vec B$",
+        "$\\;\\;B=\\mu_0 I/(2\\pi r)$",
+        "$\\;\\;B=\\mu_0 n I$"
+     ]},
+    {q:"Повежи врсту магнетика са кључном особином:",
+     prompts:[
+        "Дијамагнетик",
+        "Парамагнетик",
+        "Феромагнетик"
+     ],
+     answers:[
+        "Слабо одбијање; $\\mu_r<1$",
+        "Слабо привлачење; $\\mu_r>1$",
+        "Јако привлачење; домени; хистереза"
+     ]},
+    {q:"Повежи појам из ЕМ индукције са формулом:",
+     prompts:[
+        "ЕМС самоиндукције",
+        "Енергија магнетног поља",
+        "ЕМС узајамне индукције",
+        "ЕМС у покретном проводнику"
+     ],
+     answers:[
+        "$\\;\\;\\mathcal{E}_s = -L\\, dI/dt$",
+        "$\\;\\;W = \\tfrac{1}{2} L I^2$",
+        "$\\;\\;\\mathcal{E}_m = -M\\, dI/dt$",
+        "$\\;\\;\\mathcal{E} = B\\ell v$"
+     ]},
+    {q:"Повежи уређај са физичким принципом:",
+     prompts:[
+        "Трансформатор",
+        "Магнетне кочнице (возови)",
+        "Свећица у аутомобилу",
+        "Индукциони решо"
+     ],
+     answers:[
+        "Узајамна индукција",
+        "Вртложне струје (Ленцово правило — кочење)",
+        "Самоиндукција при прекиду струје (висок напон)",
+        "Вртложне струје (загревање)"
+     ]}
+  ];
+
+  // === Конфигурација сета — овде можеш да мењаш бројеве ако желиш краћи/дужи сет за један пролаз ===
+  var CONFIG = {
+    mcCount: 12,   // колико МЦ питања насумично по пролазу
+    tfCount: 6,    // колико ТФ питања насумично по пролазу
+    matchCount: 2  // колико спојница насумично по пролазу
+  };
+
+  var CURRENT = { items: [], finished: false };
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i=a.length-1; i>0; i--) {
+      var j = Math.floor(Math.random()*(i+1));
+      var t = a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+
+  function shuffleOptions(item){
+    if (item.type !== 'mc') return item; 
+    var bundle = item.opts.map(function(txt, i){
+      return { text: txt, isCorrect: (i === item.correct) };
+    });
+    var mixed = shuffle(bundle);
+    var newCorrect = -1;
+    for (var k=0; k<mixed.length; k++){
+      if (mixed[k].isCorrect){ newCorrect = k; break; }
+    }
+    return { q: item.q, opts: mixed.map(function(x){ return x.text; }), correct: newCorrect, type: 'mc' };
+  }
+
+  function letterFor(idx){ return String.fromCharCode(0x410 + idx); } // А, Б, В, Г ...
+
+  function buildSet(){
+    var out = [];
+    var mcSet = shuffle(MC_QUESTIONS).slice(0, CONFIG.mcCount).map(function(q){ return {type:'mc', q:q.q, opts:q.opts, correct:q.correct}; });
+    var tfSet = shuffle(TF_QUESTIONS).slice(0, CONFIG.tfCount).map(function(q){ return {type:'tf', q:q.q, correct:q.correct}; });
+    var matchSet = shuffle(MATCH_QUESTIONS).slice(0, CONFIG.matchCount).map(function(q){ 
+      return {type:'match', q:q.q, prompts:q.prompts.slice(), answers:q.answers.slice()};
+    });
+    mcSet = mcSet.map(shuffleOptions);
+    matchSet.forEach(function(it){ it.shuffledAnswers = shuffle(it.answers); });
+    out = out.concat(mcSet, tfSet, matchSet);
+    return shuffle(out);
+  }
+
+  function render(){
+    var quizEl = document.getElementById('quiz');
+    var progress = document.getElementById('progress');
+    quizEl.innerHTML = '';
+    progress.textContent = 'Питања: ' + CURRENT.items.length;
+
+    for (var idx=0; idx<CURRENT.items.length; idx++){
+      var it = CURRENT.items[idx];
+      var card = document.createElement('div'); card.className = 'card';
+      var h = document.createElement('h3'); h.className='q-h'; h.innerHTML = (idx+1) + '. ' + it.q;
+      card.appendChild(h);
+
+      var optsContainer = document.createElement('div');
+
+      switch(it.type){
+        case 'tf':
+          optsContainer.className = 'options';
+          var optionsTF = [ { text: "Тачно", value: "true" }, { text: "Нетачно", value: "false" } ];
+          for (var o=0; o<optionsTF.length; o++){
+            var id = 'q'+idx+'_o'+o;
+            var label = document.createElement('label'); label.className='opt'; label.setAttribute('for', id);
+            var input = document.createElement('input'); input.type='radio'; input.name='q'+idx; input.id=id; input.value=optionsTF[o].value;
+            var txt = document.createElement('div'); txt.className='opt-text'; txt.textContent = optionsTF[o].text;
+            label.appendChild(input); label.appendChild(txt);
+            optsContainer.appendChild(label);
+          }
+          break;
+
+        case 'match':
+          optsContainer.className = 'match-container';
+          for (var p=0; p<it.prompts.length; p++) {
+            var itemEl = document.createElement('div'); itemEl.className = 'match-item';
+            var promptEl = document.createElement('div'); promptEl.className = 'match-prompt'; promptEl.innerHTML = it.prompts[p];
+            var selectEl = document.createElement('select'); selectEl.className = 'match-select'; selectEl.name = 'q'+idx+'_m'+p;
+            var defaultOpt = document.createElement('option'); defaultOpt.value = ""; defaultOpt.textContent = "Изабери..."; selectEl.appendChild(defaultOpt);
+            for (var a=0; a<it.shuffledAnswers.length; a++) {
+              var opt = document.createElement('option'); opt.value = it.shuffledAnswers[a]; opt.innerHTML = it.shuffledAnswers[a]; 
+              selectEl.appendChild(opt);
+            }
+            itemEl.appendChild(promptEl); itemEl.appendChild(selectEl);
+            optsContainer.appendChild(itemEl);
+          }
+          break;
+
+        case 'mc':
+        default:
+          optsContainer.className = 'options';
+          for (var o=0; o<it.opts.length; o++){
+            var id = 'q'+idx+'_o'+o;
+            var label = document.createElement('label'); label.className='opt'; label.setAttribute('for', id);
+            var input = document.createElement('input'); input.type='radio'; input.name='q'+idx; input.id=id; input.value=String(o);
+            var txt = document.createElement('div'); txt.className='opt-text'; 
+            txt.innerHTML = '<span class="muted ans">' + letterFor(o) + ')</span> ' + it.opts[o];
+            label.appendChild(input); label.appendChild(txt);
+            optsContainer.appendChild(label);
+          }
+          break;
+      }
+      card.appendChild(optsContainer);
+      quizEl.appendChild(card);
+    }
+    document.getElementById('score').textContent = 'Тачно: —';
+    CURRENT.finished = false;
+
+    if (window.MathJax) { MathJax.typesetPromise(); }
+  }
+
+  function grade(){
+    if (CURRENT.finished) return;
+    var correct = 0;
+    var cards = document.querySelectorAll('#quiz .card');
+
+    for (var i=0; i<CURRENT.items.length; i++){
+      var it = CURRENT.items[i];
+      var card = cards[i];
+
+      switch(it.type){
+        case 'tf':
+          var radiosTF = document.querySelectorAll('input[name="q'+i+'"]');
+          var chosenVal = "";
+          for (var j=0;j<radiosTF.length;j++){
+            if (radiosTF[j].checked){ chosenVal = radiosTF[j].value; break; }
+          }
+          var isCorrectTF = (chosenVal === String(it.correct));
+          if (isCorrectTF) correct++;
+          var labelsTF = card.querySelectorAll('label.opt');
+          for (var k=0; k<labelsTF.length; k++){
+            var labelVal = radiosTF[k].value;
+            if (labelVal === String(it.correct)) {
+              labelsTF[k].className = 'opt correct'; // зелено означи тачно
+            } else if (labelVal === chosenVal && !isCorrectTF) {
+              labelsTF[k].className = 'opt wrong'; // црвено означи погрешно
+            }
+            radiosTF[k].disabled = true;
+          }
+          break;
+
+        case 'match':
+          var selects = card.querySelectorAll('select.match-select');
+          var correctMatches = 0;
+          for (var m=0; m<selects.length; m++) {
+            var chosenAnswer = selects[m].value;
+            var correctAnswer = it.answers[m]; // редослед одговара prompts-у
+            if (chosenAnswer === correctAnswer) {
+              correctMatches++;
+              selects[m].classList.add('correct');
+            } else {
+              selects[m].classList.add('wrong');
+              var correctAnsEl = document.createElement('span');
+              correctAnsEl.innerHTML = ' (Тачно: ' + correctAnswer + ')';
+              correctAnsEl.style.color = 'var(--accent-2)';
+              selects[m].parentElement.appendChild(correctAnsEl);
+            }
+            selects[m].disabled = true;
+          }
+          // бодовање: спојница вреди 1 бод ако је све тачно
+          if (correctMatches === selects.length) correct++;
+          break;
+
+        case 'mc':
+        default:
+          var radiosMC = document.querySelectorAll('input[name="q'+i+'"]');
+          var chosen = -1;
+          for (var j=0;j<radiosMC.length;j++){
+            if (radiosMC[j].checked){ chosen = parseInt(radiosMC[j].value,10); break; }
+          }
+          var labelsMC = card.querySelectorAll('label.opt');
+          for (var k=0;k<labelsMC.length;k++){ labelsMC[k].className = 'opt'; }
+          if (labelsMC[it.correct]) { labelsMC[it.correct].className = 'opt correct'; } // увек истакни тачан (зелено)
+          if (chosen === it.correct){
+            correct++;
+          } else if (chosen !== -1) {
+            if (labelsMC[chosen]) { labelsMC[chosen].className = 'opt wrong'; }
+          }
+          for (var r=0;r<radiosMC.length;r++){ radiosMC[r].disabled = true; }
+          break;
+      }
+    }
+
+    var total = CURRENT.items.length;
+    document.getElementById('score').textContent = 'Тачно: ' + correct + ' / ' + total + ' (' + Math.round(100*correct/total) + '%)';
+    CURRENT.finished = true;
+    if (window.MathJax) { MathJax.typesetPromise(); }
+    window.scrollTo(0,0);
+  }
+
+  function start(){
+    CURRENT.items = buildSet();
+    render();
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', grade, false);
+  document.getElementById('retryBtn').addEventListener('click', function(){
+    start();
+    window.scrollTo(0,0);
+  }, false);
+
+  // init
+  start();
+});
+</script>
+</body>
+</html>
